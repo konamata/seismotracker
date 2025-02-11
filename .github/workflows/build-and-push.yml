@@ -10,7 +10,11 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        service: [lightdash, seismotracker]
+        include:
+          - service: lightdash
+            dockerfile: dockerfile
+          - service: seismotracker
+            dockerfile: Dockerfile
 
     steps:
       - name: Checkout Repository
@@ -32,4 +36,4 @@ jobs:
           cd ${{ matrix.service }}
           docker buildx build --platform linux/amd64,linux/arm64 \
             -t ghcr.io/konamata/${{ matrix.service }}:latest \
-            -f dockerfile . --push
+            -f ${{ matrix.dockerfile }} . --push
