@@ -18,7 +18,7 @@ services:
   seismotracker-fetcher:
     image: seismotracker-fetcher:latest
     build:
-      context: .
+      context: ./seismotracker
       dockerfile: Dockerfile
     container_name: seismotracker-fetcher
     restart: always
@@ -31,48 +31,6 @@ services:
     labels:
       com.centurylinklabs.watchtower.enable: false
 
-  seismotracker-metabase:
-    image: metabase/metabase:latest
-    container_name: seismotracker-metabase
-    restart: always
-    hostname: seismotracker-metabase
-    volumes:
-      - /dev/urandom:/dev/random:ro
-    ports:
-      - 3000:3000
-    environment:
-      MB_DB_TYPE: postgres
-      MB_DB_DBNAME: metabase
-      MB_DB_PORT: 5432
-      MB_DB_USER: metabase
-      MB_DB_PASS: endoplazmikretikulum
-      MB_DB_HOST: seismotracker-postgres-metabase
-    networks:
-      - seismotracker-network
-    healthcheck:
-      test: curl --fail -I http://localhost:3000/api/health || exit 1
-      interval: 15s
-      timeout: 5s
-      retries: 5
-    labels:
-      com.centurylinklabs.watchtower.enable: true
-
-  seismotracker-postgres-metabase:
-    image: postgres:17
-    container_name: seismotracker-postgres
-    restart: always
-    hostname: seismotracker-postgres-metabase
-    environment:
-      POSTGRES_USER: metabase
-      POSTGRES_DB: metabase
-      POSTGRES_PASSWORD: endoplazmikretikulum
-    volumes:
-      - /project/seismotracker/data/postgres-metabase:/var/lib/postgresql/data
-    networks:
-      - seismotracker-network
-    labels:
-      com.centurylinklabs.watchtower.enable: true
-
   seismotracker-lightdash:
     image: seismotracker-lightdash:latest
     build:
@@ -80,6 +38,8 @@ services:
       dockerfile: dockerfile
     restart: always
     container_name: seismotracker-lightdash
+    env_file:
+      - ./lightdash/.env
     depends_on:
       - seismotracker-postgres-lightdash
     environment:
@@ -121,7 +81,7 @@ services:
       - POSTHOG_FE_API_HOST=${POSTHOG_FE_API_HOST}
       - POSTHOG_BE_API_HOST=${POSTHOG_BE_API_HOST}
     volumes:
-      - /project/seismotracker/:/usr/app/dbt
+      - /project/seismotracker/lightdash:/usr/app/dbt
     ports:
       - ${PORT:-8080}:${PORT:-8080}
     networks:
