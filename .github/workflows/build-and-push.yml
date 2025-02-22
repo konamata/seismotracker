@@ -8,6 +8,10 @@ on:
 env:
   PLATFORMS: linux/amd64,linux/arm64
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   update-submodules:
     runs-on: ubuntu-latest
