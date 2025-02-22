@@ -1,6 +1,5 @@
 services:
   seismotracker-init:
-    image: ghcr.io/konamata/seismotracker-init:latest
     build:
       context: ./init
       dockerfile: Dockerfile

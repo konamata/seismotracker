@@ -5,9 +5,47 @@ on:
     branches:
       - main
 
+env:
+  HAS_CHANGES: false
+  PLATFORMS: linux/amd64,linux/arm64
+
 jobs:
+  update-submodules:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+          token: ${{ secrets.MY_PAT_TOKEN }}
+
+      - name: Update Submodules
+        run: |
+          git submodule update --remote --recursive
+          git status
+
+      - name: Check for Changes
+        id: check_changes
+        run: |
+          if [[ -n "$(git status --porcelain)" ]]; then
+            echo "Submodules have updates."
+            echo "HAS_CHANGES=true" >> $GITHUB_ENV
+          else
+            echo "HAS_CHANGES=false" >> $GITHUB_ENV
+          fi
+
+      - name: Commit and Push Changes
+        if: env.HAS_CHANGES == 'true'
+        run: |
+          git config --global user.email "github-actions@github.com"
+          git config --global user.name "GitHub Actions"
+          git add .
+          git commit -m "Auto-update submodules to latest commit"
+          git push origin main
+
   build-and-push:
     runs-on: ubuntu-latest
+    needs: update-submodules
     strategy:
       matrix:
         include:
@@ -34,6 +72,6 @@ jobs:
       - name: Build and Push Multi-Arch Image
         run: |
           cd ${{ matrix.service }}
-          docker buildx build --platform linux/amd64,linux/arm64 \
-            -t ghcr.io/konamata/${{ matrix.service }}:latest \
+          docker buildx build --platform ${{ env.PLATFORMS }} \
+            -t ghcr.io/${{ github.repository_owner }}/${{ matrix.service }}:latest \
             -f ${{ matrix.dockerfile }} . --push
