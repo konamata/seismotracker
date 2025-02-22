@@ -32,7 +32,7 @@ services:
       com.centurylinklabs.watchtower.enable: false
 
   seismotracker-lightdash:
-    image: seismotracker-lightdash:latest
+    image: ghcr.io/konamata/seismotracker-lightdash:latest
     build:
       context: ./lightdash
       dockerfile: dockerfile

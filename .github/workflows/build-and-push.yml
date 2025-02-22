@@ -103,4 +103,5 @@ jobs:
           push: true
           tags: |
             ghcr.io/${{ github.repository_owner }}/${{ matrix.services.name }}:${{ steps.unique_tag.outputs.unique_tag }}
+            ghcr.io/${{ github.repository_owner }}/${{ matrix.services.name }}:latest
           no-cache: true
