@@ -10,37 +10,16 @@ on:
       - '**/lightdash/**'
 
 env:
-  PLATFORMS: linux/amd64,linux/arm64
+  PLATFORMS: linux/arm64
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  check-build-trigger:
-    runs-on: ubuntu-latest
-    if: contains(github.event.head_commit.message, '#BUILD') || contains(github.event.head_commit.message, '#CHECK_LIGHTDASH')
-    outputs:
-      should_build: ${{ steps.check_commit.outputs.should_build }}
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Check for BUILD tag in Commit Message
-        id: check_commit
-        run: |
-          if git log -1 --pretty=%B | grep -q "#BUILD"; then
-            echo "Triggering build due to #BUILD tag in commit message."
-            echo "should_build=true" >> $GITHUB_OUTPUT
-          else
-            echo "No #BUILD tag found. Skipping build."
-            echo "should_build=false" >> $GITHUB_OUTPUT
-          fi
-
   build-and-push:
     runs-on: ubuntu-latest
-    needs: check-build-trigger
-    if: needs.check-build-trigger.outputs.should_build == 'true' && contains(github.event.head_commit.message, '#BUILD')
+    if: contains(github.event.head_commit.message, '#BUILD')
     strategy:
       matrix:
         services:
