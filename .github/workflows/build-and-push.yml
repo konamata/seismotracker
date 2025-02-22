@@ -9,24 +9,23 @@ on:
       - '*/.git' 
       - '**/lightdash/**'
 
-env:
-  PLATFORMS: linux/amd64,linux/arm64
-
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   build-and-push:
-    runs-on: mac-mini
+    runs-on: zima
     if: contains(github.event.head_commit.message, '#BUILD')
     strategy:
       matrix:
         services:
           - name: lightdash
             dockerfile: Dockerfile
+            platforms: linux/amd64,linux/arm64
           - name: seismotracker
             dockerfile: Dockerfile
+            platforms: linux/amd64,linux/arm64
 
     steps:
       - name: Checkout Repository
@@ -62,7 +61,7 @@ jobs:
         with:
           context: ${{ matrix.services.name }}
           file: ${{ matrix.services.name }}/${{ matrix.services.dockerfile }}
-          platforms: ${{ env.PLATFORMS }}
+          platforms: ${{ matrix.services.platforms }}
           push: true
           tags: |
             ghcr.io/${{ github.repository_owner }}/${{ matrix.services.name }}:${{ steps.unique_tag.outputs.unique_tag }}
