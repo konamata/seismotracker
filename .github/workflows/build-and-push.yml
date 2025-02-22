@@ -10,7 +10,7 @@ on:
       - '**/lightdash/**'
 
 env:
-  PLATFORMS: linux/arm64
+  PLATFORMS: linux/amd64,linux/arm64
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
