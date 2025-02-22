@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   build-and-push:
-    runs-on: zima
+    runs-on: self-hosted-x64
     if: contains(github.event.head_commit.message, '#BUILD')
     strategy:
       matrix:
@@ -24,7 +24,7 @@ jobs:
             dockerfile: Dockerfile
           - name: lightdash
             dockerfile: Dockerfile
-
+      max-parallel: 2
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
