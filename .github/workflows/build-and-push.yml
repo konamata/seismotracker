@@ -6,20 +6,22 @@ on:
       - main
 
 env:
-  HAS_CHANGES: false
   PLATFORMS: linux/amd64,linux/arm64
 
 jobs:
   update-submodules:
     runs-on: ubuntu-latest
+    outputs:
+      has_changes: ${{ steps.check_changes.outputs.has_changes }}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
-          submodules: true
+          submodules: recursive
           token: ${{ secrets.MY_PAT_TOKEN }}
 
       - name: Update Submodules
+        id: update_submodules
         run: |
           git submodule update --remote --recursive
           git status
@@ -29,13 +31,13 @@ jobs:
         run: |
           if [[ -n "$(git status --porcelain)" ]]; then
             echo "Submodules have updates."
-            echo "HAS_CHANGES=true" >> $GITHUB_ENV
+            echo "has_changes=true" >> $GITHUB_OUTPUT
           else
-            echo "HAS_CHANGES=false" >> $GITHUB_ENV
+            echo "has_changes=false" >> $GITHUB_OUTPUT
           fi
 
       - name: Commit and Push Changes
-        if: env.HAS_CHANGES == 'true'
+        if: steps.check_changes.outputs.has_changes == 'true'
         run: |
           git config --global user.email "github-actions@github.com"
           git config --global user.name "GitHub Actions"
@@ -48,10 +50,10 @@ jobs:
     needs: update-submodules
     strategy:
       matrix:
-        include:
-          - service: lightdash
-            dockerfile: dockerfile
-          - service: seismotracker
+        services:
+          - name: lightdash
+            dockerfile: Dockerfile
+          - name: seismotracker
             dockerfile: Dockerfile
 
     steps:
@@ -60,18 +62,32 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
-      - name: Set up Docker Buildx
+      - name: Set up QEMU and Docker Buildx
         uses: docker/setup-buildx-action@v3
+        with:
+          platforms: ${{ env.PLATFORMS }}
 
       - name: Log in to GHCR
-        run: echo "${{ secrets.MY_PAT_TOKEN }}" | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.MY_PAT_TOKEN }}
 
-      - name: Build and Push Multi-Arch Image
+      - name: Generate Unique Tag
+        id: unique_tag
         run: |
-          cd ${{ matrix.service }}
-          docker buildx build --platform ${{ env.PLATFORMS }} \
-            -t ghcr.io/${{ github.repository_owner }}/${{ matrix.service }}:latest \
-            -f ${{ matrix.dockerfile }} . --push
+          UNIQUE_TAG="build-${{ github.run_id }}-$(date +%s)"
+          echo "Generated unique tag: $UNIQUE_TAG"
+          echo "unique_tag=$UNIQUE_TAG" >> $GITHUB_OUTPUT
+
+      - name: Build and Push Multi-Arch Image (No Cache)
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.services.name }}
+          file: ${{ matrix.services.name }}/${{ matrix.services.dockerfile }}
+          platforms: ${{ env.PLATFORMS }}
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/${{ matrix.services.name }}:${{ steps.unique_tag.outputs.unique_tag }}
+          no-cache: true
