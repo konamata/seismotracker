@@ -2,7 +2,7 @@ package main
 
 import (
 	"compress/gzip"
-	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -13,9 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	_ "github.com/jackc/pgx/v5/stdlib" // PostgreSQL Driver
 )
 
 // timeLayout is the expected time format for the QuakeLink API.
@@ -36,85 +34,57 @@ type ResponseData struct {
 
 // Event represents a single event returned by the API.
 type Event struct {
-	EventID      string    `json:"eventID" bson:"eventID"`
-	Otime        string    `json:"otime" bson:"otime"`
-	Updated      string    `json:"updated" bson:"updated"`
-	Mag          float64   `json:"mag" bson:"mag"`
-	MagType      string    `json:"magType" bson:"magType"`
-	Lat          float64   `json:"lat" bson:"lat"`
-	Lon          float64   `json:"lon" bson:"lon"`
-	Depth        float64   `json:"depth" bson:"depth"`
-	Agency       string    `json:"agency" bson:"agency"`
-	Status       string    `json:"status" bson:"status"`
-	Estatus      string    `json:"estatus" bson:"estatus"`
-	Emode        string    `json:"emode" bson:"emode"`
-	Felt         bool      `json:"felt" bson:"felt"`
-	Region       string    `json:"region" bson:"region"`
-	ComputedDate time.Time `bson:"computedDate"`
-	Energy       float64   `bson:"energy"`
+	EventID string  `json:"eventID"`
+	Otime   string  `json:"otime"`
+	Updated string  `json:"updated"`
+	Mag     float64 `json:"mag"`
+	MagType string  `json:"magType"`
+	Lat     float64 `json:"lat"`
+	Lon     float64 `json:"lon"`
+	Depth   float64 `json:"depth"`
+	Agency  string  `json:"agency"`
+	Status  string  `json:"status"`
+	Estatus string  `json:"estatus"`
+	Emode   string  `json:"emode"`
+	Felt    bool    `json:"felt"`
+	Region  string  `json:"region"`
 }
 
 func main() {
-	// Set up the log flags to include date, time, and file info.
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
-
-	// Create an HTTP client for reuse.
 	client := &http.Client{}
+	lastFetched := fmt.Sprintf("%d,1,1,0,0,0,0", time.Now().Year())
 
-	// Initialize the lastFetched timestamp.
-	lastFetched := "2025,1,1,0,0,0,0"
-
-	// Retrieve MongoDB URI from environment variable, or use the default.
-	mongoURI := os.Getenv("MONGO_URI")
-	if mongoURI == "" {
-		mongoURI = "mongodb://root:endoplazmikretikulum@localhost:27017"
+	postgresURI := os.Getenv("POSTGRES_URI")
+	if postgresURI == "" {
+		postgresURI = "postgres://postgres:password@localhost:5432/seismotracker?sslmode=disable"
 	}
 
-	// Create a context with a 10-second timeout for connecting to MongoDB.
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	// Connect to MongoDB.
-	mongoClient, err := mongo.Connect(ctx, options.Client().ApplyURI(mongoURI))
+	db, err := sql.Open("pgx", postgresURI)
 	if err != nil {
-		log.Fatalf("Failed to connect to MongoDB: %v", err)
+		log.Fatalf("Failed to connect to PostgreSQL: %v", err)
 	}
-	log.Println("Successfully connected to MongoDB.")
+	defer db.Close()
+	log.Println("Successfully connected to PostgreSQL.")
 
-	collection := mongoClient.Database("quakelink").Collection("events")
-
-	// Create a unique index on the eventID field.
-	indexModel := mongo.IndexModel{
-		Keys:    bson.D{{Key: "eventID", Value: 1}},
-		Options: options.Index().SetUnique(true),
+	if err != nil {
+		log.Fatalf("Database setup failed: %v", err)
 	}
-	if _, err := collection.Indexes().CreateOne(ctx, indexModel); err != nil {
-		log.Fatalf("Failed to create unique index on eventID: %v", err)
-	}
-	log.Println("Successfully created unique index on eventID.")
 
-	// Continuously fetch events from the API and update MongoDB.
 	for {
-		// Parse the lastFetched time.
 		parsedLast, err := time.Parse(timeLayout, lastFetched)
 		if err != nil {
-			// If parsing fails, use the current UTC time.
 			parsedLast = time.Now().UTC()
 		}
 
-		// Calculate the lower bound by subtracting one hour from lastFetched.
 		lowerBoundTime := parsedLast.Add(-1 * time.Hour)
 		lowerBoundStr := lowerBoundTime.Format(timeLayout)
-
-		// Upper bound is the current UTC time.
 		upperBoundTime := time.Now().UTC()
 		upperBoundStr := upperBoundTime.Format(timeLayout)
 
-		// Build the query payload.
 		payload := fmt.Sprintf("(updated>=%s) and updated<=%s", lowerBoundStr, upperBoundStr)
 		log.Println("Sending payload:", payload)
 
-		// Fetch events from the API.
 		data, err := fetchEvents(client, payload)
 		if err != nil {
 			log.Printf("Error fetching events: %v", err)
@@ -122,33 +92,19 @@ func main() {
 			continue
 		}
 
-		// Process and upsert events in MongoDB.
 		if len(data.Seiscomp.Events) > 0 {
 			log.Printf("Found %d new events.", len(data.Seiscomp.Events))
 			for _, event := range data.Seiscomp.Events {
-				// Parse the event time (otime) into a time.Time object.
-				computedDate, err := time.Parse(time.RFC3339, event.Otime)
-				if err != nil {
-					log.Printf("Error parsing otime for event %s: %v", event.EventID, err)
-					continue
-				}
-				event.ComputedDate = computedDate
-
-				// Calculate the energy of the earthquake.
-				event.Energy = Energy(event.Mag)
-
-				// Insert or update the event in MongoDB.
-				if err := upsertEvent(collection, event); err != nil {
-					log.Printf("Error updating MongoDB for event %s: %v", event.EventID, err)
+				if err := upsertEvent(db, event); err != nil {
+					log.Printf("Error updating PostgreSQL for event %s: %v", event.EventID, err)
 				} else {
-					log.Printf("EventID %s successfully inserted/updated in MongoDB.", event.EventID)
+					log.Printf("EventID %s successfully inserted/updated in PostgreSQL.", event.EventID)
 				}
 			}
 		} else {
 			log.Println("No new events found.")
 		}
 
-		// Update lastFetched to the current upper bound.
 		lastFetched = upperBoundStr
 		log.Println("Updated lastFetched to:", lastFetched)
 
@@ -156,45 +112,30 @@ func main() {
 	}
 }
 
-// fetchEvents makes a POST request to the QuakeLink API with the given payload,
-// uses streaming JSON decoding to minimize memory usage, and returns the parsed data.
+// fetchEvents fetches earthquake data from the API.
 func fetchEvents(client *http.Client, payload string) (*ResponseData, error) {
-	// Create a new POST request.
 	req, err := http.NewRequest("POST", "https://quakelink.raspberryshake.org/events/query", io.NopCloser(strings.NewReader(payload)))
 	if err != nil {
 		return nil, fmt.Errorf("error creating request: %w", err)
 	}
 	req.Header.Set("Content-Type", "text/plain")
 
-	// Send the request.
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("error sending request: %w", err)
 	}
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			log.Printf("Error closing response body: %v", err)
-		}
-	}(resp.Body)
+	defer resp.Body.Close()
 
-	// Use gzip reader if the response is compressed.
 	var reader io.Reader = resp.Body
 	if resp.Header.Get("Content-Encoding") == "gzip" {
 		gz, err := gzip.NewReader(resp.Body)
 		if err != nil {
 			return nil, fmt.Errorf("error decompressing gzip response: %w", err)
 		}
-		defer func(gz *gzip.Reader) {
-			err := gz.Close()
-			if err != nil {
-				log.Printf("Error closing gzip reader: %v", err)
-			}
-		}(gz)
+		defer gz.Close()
 		reader = gz
 	}
 
-	// Stream decode the JSON response.
 	var data ResponseData
 	dec := json.NewDecoder(reader)
 	if err := dec.Decode(&data); err != nil {
@@ -204,15 +145,27 @@ func fetchEvents(client *http.Client, payload string) (*ResponseData, error) {
 	return &data, nil
 }
 
-// upsertEvent inserts or updates the event in MongoDB based on its eventID.
-func upsertEvent(collection *mongo.Collection, event Event) error {
-	filter := bson.M{"eventID": event.EventID}
-	update := bson.M{"$set": event}
-
-	// Create a context with a 5-second timeout for the MongoDB operation.
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	_, err := collection.UpdateOne(ctx, filter, update, options.Update().SetUpsert(true))
+// upsertEvent inserts or updates the event in PostgreSQL.
+func upsertEvent(db *sql.DB, event Event) error {
+	query := `
+		INSERT INTO events (event_id, otime, updated, mag, mag_type, lat, lon, depth, agency, status, estatus, emode, felt, region, etldate)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+		ON CONFLICT (event_id) DO UPDATE 
+		SET updated = EXCLUDED.updated, 
+			mag = EXCLUDED.mag,
+			mag_type = EXCLUDED.mag_type,
+			lat = EXCLUDED.lat,
+			lon = EXCLUDED.lon,
+			depth = EXCLUDED.depth,
+			agency = EXCLUDED.agency,
+			status = EXCLUDED.status,
+			estatus = EXCLUDED.estatus,
+			emode = EXCLUDED.emode,
+			felt = EXCLUDED.felt,
+			region = EXCLUDED.region,
+			etldate = EXCLUDED.etldate;
+		`
+	_, err := db.Exec(query, event.EventID, event.Otime, event.Updated, event.Mag, event.MagType, event.Lat, event.Lon, event.Depth,
+		event.Agency, event.Status, event.Estatus, event.Emode, event.Felt, event.Region, time.Now().UTC())
 	return err
 }

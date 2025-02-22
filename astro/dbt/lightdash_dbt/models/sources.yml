@@ -1,0 +1,11 @@
+version: 2
+sources:
+  - name: seismotracker
+    database: seismotracker
+    schema: public
+    tables:
+      - name: events
+      - name: geoname
+      - name: countryinfo
+      - name: alternatename
+      - name: spatial_ref_sys
