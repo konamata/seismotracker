@@ -1,3 +1,4 @@
 [submodule "lightdash"]
 	path = lightdash
 	url = https://github.com/lightdash/lightdash.git
+	branch = main

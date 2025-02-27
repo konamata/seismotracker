@@ -1,106 +1,119 @@
 services:
-  seismotracker-mongo:
-    image: mongo:latest
-    container_name: seismotracker-mongo
-    volumes: 
-      - /project/seismotracker/data/mongo:/data/db
-    restart: always
-    ports:
-      - 27017:27017
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: endoplazmikretikulum
-    networks:
-      - seismotracker-network
+  seismotracker-init:
+    build:
+      context: ./init
+      dockerfile: Dockerfile
+    pull_policy: build
+    container_name: seismotracker-init
+    network_mode: none
+    volumes:
+      - /project/seismotracker/data/geonames:/data:rw
+    restart: no
     labels:
-      com.centurylinklabs.watchtower.enable: true
+      com.centurylinklabs.watchtower.enable: false
 
   seismotracker-fetcher:
-    image: seismotracker-fetcher:latest
+    image: ghcr.io/konamata/seismotracker:latest
     build:
       context: ./seismotracker
       dockerfile: Dockerfile
+    pull_policy: build
     container_name: seismotracker-fetcher
     restart: always
+    init: true
     depends_on:
-      - seismotracker-mongo
+      seismotracker-postgres:
+        condition: service_healthy
     environment:
-      MONGO_URI: mongodb://root:endoplazmikretikulum@seismotracker-mongo:27017
+      POSTGRES_URI: postgres://postgres:password@seismotracker-postgres:5432/seismotracker?sslmode=disable
     networks:
       - seismotracker-network
     labels:
       com.centurylinklabs.watchtower.enable: false
 
   seismotracker-lightdash:
-    image: seismotracker-lightdash:latest
+    image: ghcr.io/konamata/seismotracker-lightdash:latest
     build:
       context: ./lightdash
       dockerfile: dockerfile
+    pull_policy: build
     restart: always
     container_name: seismotracker-lightdash
-    env_file:
-      - ./lightdash/.env
+    init: true
     depends_on:
-      - seismotracker-postgres-lightdash
+      seismotracker-postgres:
+        condition: service_healthy
     environment:
-      - PGHOST=${PGHOST:-db}
-      - PGPORT=${PGPORT:-5432}
-      - PGUSER=${PGUSER:-postgres}
-      - PGPASSWORD=${PGPASSWORD}
-      - PGDATABASE=${PGDATABASE:-postgres}
-      - SECURE_COOKIES=${SECURE_COOKIES:-false}
-      - TRUST_PROXY=${TRUST_PROXY:-false}
-      - LIGHTDASH_SECRET=${LIGHTDASH_SECRET}
-      - PORT=${PORT:-8080}
-      - LIGHTDASH_LOG_LEVEL=${LIGHTDASH_LOG_LEVEL}
-      - LIGHTDASH_INSTALL_ID=${LIGHTDASH_INSTALL_ID}
-      - LIGHTDASH_INSTALL_TYPE=${LIGHTDASH_INSTALL_TYPE:-docker_image}
-      - AUTH_DISABLE_PASSWORD_AUTHENTICATION=${AUTH_DISABLE_PASSWORD_AUTHENTICATION}
-      - AUTH_ENABLE_GROUP_SYNC=${AUTH_ENABLE_GROUP_SYNC}
-      - AUTH_GOOGLE_ENABLED=${AUTH_GOOGLE_ENABLED}
-      - AUTH_GOOGLE_OAUTH2_CLIENT_ID=${AUTH_GOOGLE_OAUTH2_CLIENT_ID}
-      - AUTH_GOOGLE_OAUTH2_CLIENT_SECRET=${AUTH_GOOGLE_OAUTH2_CLIENT_SECRET}
-      - SITE_URL=${SITE_URL}
-      - EMAIL_SMTP_HOST=${EMAIL_SMTP_HOST}
-      - EMAIL_SMTP_PORT=${EMAIL_SMTP_PORT}
-      - EMAIL_SMTP_SECURE=${EMAIL_SMTP_SECURE}
-      - EMAIL_SMTP_USER=${EMAIL_SMTP_USER}
-      - EMAIL_SMTP_PASSWORD=${EMAIL_SMTP_PASSWORD}
-      - EMAIL_SMTP_ALLOW_INVALID_CERT=${EMAIL_SMTP_ALLOW_INVALID_CERT}
-      - EMAIL_SMTP_SENDER_NAME=${EMAIL_SMTP_SENDER_NAME}
-      - EMAIL_SMTP_SENDER_EMAIL=${EMAIL_SMTP_SENDER_EMAIL}
-      - ALLOW_MULTIPLE_ORGS=${ALLOW_MULTIPLE_ORGS:-false}
-      - LIGHTDASH_QUERY_MAX_LIMIT=${LIGHTDASH_QUERY_MAX_LIMIT}
-      - LIGHTDASH_MAX_PAYLOAD=${LIGHTDASH_MAX_PAYLOAD:-5mb}
+      - PGHOST=seismotracker-postgres
+      - PGPORT=5432
+      - PGUSER=postgres
+      - PGPASSWORD=password
+      - PGDATABASE=lightdash
+      - POSTGRES_HOST_AUTH_METHOD=trust
+      - SECURE_COOKIES=false
+      - TRUST_PROXY=false
+      - LIGHTDASH_SECRET=endoplazmikretikretikulum
+      - PORT=8081
+      - LIGHTDASH_LOG_LEVEL=debug
+      - LIGHTDASH_INSTALL_TYPE=docker_image
+      - SITE_URL=http://localhost:8081
+      - LIGHTDASH_QUERY_MAX_LIMIT=50000
+      - ALLOW_MULTIPLE_ORGS=false
+      - LIGHTDASH_MAX_PAYLOAD=50mb
       - HEADLESS_BROWSER_HOST=headless-browser
       - HEADLESS_BROWSER_PORT=3000
-      - RUDDERSTACK_WRITE_KEY=${RUDDERSTACK_WRITE_KEY}
+      - LIGHTDASH_INSTALL_ID=
+      - AUTH_DISABLE_PASSWORD_AUTHENTICATION=
+      - AUTH_ENABLE_GROUP_SYNC=
+      - AUTH_GOOGLE_ENABLED=
+      - AUTH_GOOGLE_OAUTH2_CLIENT_ID=
+      - AUTH_GOOGLE_OAUTH2_CLIENT_SECRET=
+      - EMAIL_SMTP_HOST=
+      - EMAIL_SMTP_PORT=
+      - EMAIL_SMTP_SECURE=
+      - EMAIL_SMTP_USER=
+      - EMAIL_SMTP_PASSWORD=
+      - EMAIL_SMTP_ALLOW_INVALID_CERT=
+      - EMAIL_SMTP_SENDER_NAME=
+      - EMAIL_SMTP_SENDER_EMAIL=
+      - RUDDERSTACK_WRITE_KEY=
       - SCHEDULER_ENABLED=true
-      - GROUPS_ENABLED=${GROUPS_ENABLED:-false}
-      - POSTHOG_PROJECT_API_KEY=${POSTHOG_PROJECT_API_KEY}
-      - POSTHOG_FE_API_HOST=${POSTHOG_FE_API_HOST}
-      - POSTHOG_BE_API_HOST=${POSTHOG_BE_API_HOST}
+      - GROUPS_ENABLED=false
+      - POSTHOG_PROJECT_API_KEY=
+      - POSTHOG_FE_API_HOST=
+      - POSTHOG_BE_API_HOST=
     volumes:
       - /project/seismotracker/lightdash:/usr/app/dbt
     ports:
-      - ${PORT:-8080}:${PORT:-8080}
+      - 8081:8081
     networks:
       - seismotracker-network
     labels:
       com.centurylinklabs.watchtower.enable: false
 
-  seismotracker-postgres-lightdash:
-    image: postgres:15.4
+  seismotracker-postgres:
+    build:
+      context: ./postgres
+      dockerfile: Dockerfile
     restart: always
-    container_name: seismotracker-postgres-lightdash
+    container_name: seismotracker-postgres
+    ports:
+      - 5432:5432
     environment:
-      POSTGRES_PASSWORD: ${PGPASSWORD}
-      POSTGRES_USER: ${PGUSER:-postgres}
-      POSTGRES_DB: ${PGDATABASE:-postgres}
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: seismotracker
     volumes:
-      - /project/seismotracker/data/postgres-lightdash:/var/lib/postgresql/data
+      - /project/seismotracker/data/postgres:/var/lib/postgresql/data
+      - /project/seismotracker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - /project/seismotracker/data/geonames:/geonames:ro
     networks:
       - seismotracker-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
     labels:
       com.centurylinklabs.watchtower.enable: true
 
@@ -108,13 +121,15 @@ services:
     image: ghcr.io/browserless/chromium:v2.24.3
     restart: always
     container_name: seismotracker-headless-browser
+    init: true
+    depends_on:
+      - seismotracker-lightdash
     ports:
       - 3001:3000
     networks:
       - seismotracker-network
     labels:
       com.centurylinklabs.watchtower.enable: true
-
 
 networks:
   seismotracker-network:
