@@ -1,0 +1,32 @@
+kind create cluster --config kind-config.yml
+
+kubectl create namespace nginx
+
+kubectl apply -f ./k8s/nginx-deployment.yaml
+kubectl apply -f ./k8s/nginx-service.yaml
+kubectl apply -f ./k8s/nginx-ingress.yaml
+kubectl apply -f ./k8s/nginx-ingressroute.yaml
+
+helm repo add traefik https://traefik.github.io/charts
+helm repo update
+helm install traefik traefik/traefik --namespace traefik --create-namespace --values ./k8s/traefik-values.yaml
+# helm upgrade traefik traefik/traefik --namespace traefik --create-namespace --values ./k8s/traefik-values.yaml
+# helm delete traefik --namespace traefik
+
+kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.13.7/config/manifests/metallb-native.yaml
+kubectl wait --namespace metallb-system \
+                --for=condition=ready pod \
+                --selector=app=metallb \
+                --timeout=90s
+kubectl apply -f ./k8s/metallb-config.yaml
+
+
+❯ kubectl get ingress -n nginx
+NAME            CLASS     HOSTS                ADDRESS   PORTS   AGE
+nginx-ingress   traefik   nginx.nefilm.click             80      9s
+
+❯ kubectl get services -n traefik
+NAME      TYPE           CLUSTER-IP       EXTERNAL-IP   PORT(S)                      AGE
+traefik   LoadBalancer   10.105.142.146   <pending>     80:31338/TCP,443:32625/TCP   28m
+
+kind delete cluster --name seismo

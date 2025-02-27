@@ -1,0 +1,224 @@
+version: 2
+models:
+  - name: events
+    columns:
+      - name: event_id
+        description: Event ID
+        meta:
+          dimension:
+            type: string
+            label: Event ID
+          metrics:
+            count:
+              type: count_distinct
+              label: Event (Count)
+      - name: otime
+        description: Origin Date
+        meta:
+          dimension:
+            type: timestamp
+            label: Origin Date
+            time_intervals:
+              - RAW
+              - MILLISECOND
+              - SECOND
+              - MINUTE
+              - HOUR
+              - DAY
+              - DAY_OF_WEEK_INDEX
+              - DAY_OF_WEEK_NAME
+              - DAY_OF_MONTH_NUM
+              - DAY_OF_YEAR_NUM
+              - WEEK
+              - WEEK_NUM
+              - MONTH
+              - MONTH_NUM
+              - MONTH_NAME
+              - QUARTER
+              - QUARTER_NUM
+              - QUARTER_NAME
+              - YEAR
+              - YEAR_NUM
+              - HOUR_OF_DAY_NUM
+              - MINUTE_OF_HOUR_NUM
+      - name: lat
+        description: Latitude
+        meta:
+          dimension:
+            type: number
+            label: Latitude
+      - name: lon
+        description: Longitude
+        meta:
+          dimension:
+            type: number
+            label: Longitude
+      - name: agency
+        description: Agency
+        meta:
+          dimension:
+            type: string
+            label: Agency
+      - name: region
+        description: Region
+        meta:
+          dimension:
+            type: string
+            label: Region
+      - name: country_name
+        description: Country name
+        meta:
+          dimension:
+            type: string
+            label: Country
+      - name: nearest_place
+        description: Nearest Place
+        meta:
+          dimension:
+            type: string
+            label: Nearest Place
+      - name: distance_km
+        description: Distance in km
+        meta:
+          dimension:
+            type: number
+            label: Distance (km)
+            round: 0
+            hidden: true
+          metrics:
+            distance_avg:
+              type: average
+              label: Distance (Average)
+              groups:
+                - Distance Metrics
+              round: 0
+              hidden: true
+            distance_min:
+              type: min
+              label: Distance (Minimum)
+              groups:
+                - Distance Metrics
+              round: 0
+              hidden: true
+            distance_max:
+              type: max
+              label: Distance (Maximum)
+              groups:
+                - Distance Metrics
+              round: 0
+              hidden: true
+      - name: depth
+        description: Depth in km
+        meta:
+          metrics:
+            depth_avg:
+              type: average
+              label: Depth (Average)
+              groups:
+                - Depth Metrics
+              round: 0
+            depth_min:
+              type: min
+              label: Depth (Minimum)
+              groups:
+                - Depth Metrics
+              round: 0
+            depth_max:
+              type: max
+              label: Depth (Maximum)
+              groups:
+                - Depth Metrics
+              round: 0
+          dimension:
+            type: number
+            label: Depth (km)
+            round: 0
+          additional_dimensions:
+            depth_tier:
+              type: string
+              label: Depth Tier
+              description: Depth Tier (km)
+              sql: |
+                case 
+                  when ${depth} <= 0 then '1. 0 or less km'
+                  when ${depth} > 0 and ${depth} <= 5 then '2. 1-5 km'
+                  when ${depth} > 5 and ${depth} <= 10 then '3. 6-10 km'
+                  when ${depth} > 10 and ${depth} <= 25 then '4. 11-25 km'
+                  when ${depth} > 25 and ${depth} <= 50 then '5. 26-50 km'
+                  when ${depth} > 50 and ${depth} <= 100 then '6. 51-100 km'
+                  when ${depth} > 100 and ${depth} <= 250 then '7. 101-250 km'
+                  when ${depth} > 250 and ${depth} <= 600 then '8. 251-600 km'
+                  when ${depth} > 600 then '9. 601+ km'
+                  else null
+                end
+      - name: mag
+        description: Magnitude
+        meta:
+          metrics:
+            mag_avg:
+              type: average
+              label: Magnitude (Average)
+              groups:
+                - Magnitude Metrics
+              round: 1
+            mag_min:
+              type: min
+              label: Magnitude (Minimum)
+              groups:
+                - Magnitude Metrics
+              round: 1
+            mag_max:
+              type: max
+              label: Magnitude (Maximum)
+              groups:
+                - Magnitude Metrics
+              round: 1
+          dimension:
+            type: number
+            label: Magnitude
+            round: 1
+          additional_dimensions:
+            mag_tier:
+              type: string
+              label: Magnitude Tier
+              description: Magnitude Tier
+              sql: |
+                CASE 
+                  WHEN ${mag} < 1.0 THEN '0 mag'
+                  WHEN ${mag} >= 1.0 AND ${mag} < 2.0 THEN '1 mag'
+                  WHEN ${mag} >= 2.0 AND ${mag} < 3.0 THEN '2 mag'
+                  WHEN ${mag} >= 3.0 AND ${mag} < 4.0 THEN '3 mag'
+                  WHEN ${mag} >= 4.0 AND ${mag} < 5.0 THEN '4 mag'
+                  WHEN ${mag} >= 5.0 AND ${mag} < 6.0 THEN '5 mag'
+                  WHEN ${mag} >= 6.0 AND ${mag} < 7.0 THEN '6 mag'
+                  WHEN ${mag} >= 7.0 AND ${mag} < 8.0 THEN '7 mag'
+                  WHEN ${mag} >= 8.0 AND ${mag} < 9.0 THEN '8 mag'
+                  ELSE 'Unknown'
+                END
+      - name: alternate_names
+        description: ""
+        meta:
+          dimension:
+            type: string
+            label: Alternate Names
+      - name: updated_date
+        description: Updated Date
+        meta:
+          dimension:
+            type: timestamp
+            label: Updated Date
+            hidden: true
+      - name: mag_type
+        description: Magnitude Type
+        meta:
+          dimension:
+            type: string
+            label: Magnitude Type
+            hidden: true
+      - name: etl_date
+        description: ETL Date
+        meta:
+          dimension:
+            type: timestamp
+            label: ETL Date
+            hidden: true

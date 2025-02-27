@@ -1,0 +1,9 @@
+entryPoints:
+  web:
+    redirectTo:
+      port: websecure
+ingressRoute:
+  nginx:
+    enabled: true
+    entryPoints: ["web", "websecure"]
+    matchRule: Host(`nginx.nefilm.click`)

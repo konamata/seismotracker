@@ -1,0 +1,139 @@
+version: 2
+models:
+  - name: events_stg
+    columns:
+      - name: event_id
+        description: Event ID
+        meta:
+          dimension:
+            type: string
+            label: Event ID
+          metrics:
+            count:
+              type: count_distinct
+              label: Event (Count)
+      - name: otime
+        description: Origin Date
+        meta:
+          dimension:
+            type: timestamp
+            label: Origin Date
+      - name: lat
+        description: Latitude
+        meta:
+          dimension:
+            type: number
+            label: Latitude
+      - name: lon
+        description: Longitude
+        meta:
+          dimension:
+            type: number
+            label: Longitude
+      - name: agency
+        description: Agency
+        meta:
+          dimension:
+            type: string
+            label: Agency
+      - name: region
+        description: Region
+        meta:
+          dimension:
+            type: string
+            label: Region
+      - name: country_name
+        description: Country name
+        meta:
+          dimension:
+            type: string
+            label: Country
+      - name: nearest_place
+        description: Nearest Place
+        meta:
+          dimension:
+            type: string
+            label: Nearest Place
+      - name: distance_km
+        description: Distance in km
+        meta:
+          dimension:
+            type: number
+            label: Distance (km)
+            round: 0
+      - name: depth
+        description: Depth in km
+        meta:
+          metrics:
+            depth_avg:
+              type: average
+              label: Depth (Average)
+              groups:
+                - Depth Metrics
+              round: 0
+            depth_min:
+              type: min
+              label: Depth (Minimum)
+              groups:
+                - Depth Metrics
+              round: 0
+            depth_max:
+              type: max
+              label: Depth (Maximum)
+              groups:
+                - Depth Metrics
+              round: 0
+          dimension:
+            type: number
+            label: Depth (km)
+            round: 0
+      - name: mag
+        description: Magnitude
+        meta:
+          metrics:
+            mag_avg:
+              type: average
+              label: Magnitude (Average)
+              groups:
+                - Magnitude Metrics
+              round: 1
+            mag_min:
+              type: min
+              label: Magnitude (Minimum)
+              groups:
+                - Magnitude Metrics
+              round: 1
+            mag_max:
+              type: max
+              label: Magnitude (Maximum)
+              groups:
+                - Magnitude Metrics
+              round: 1
+          dimension:
+            type: number
+            label: Magnitude
+            round: 1
+      - name: alternate_names
+        description: ""
+        meta:
+          dimension:
+            type: string
+            label: Alternate Names
+      - name: updated_date
+        description: Updated Date
+        meta:
+          dimension:
+            type: timestamp
+            label: Updated Date
+      - name: mag_type
+        description: Magnitude Type
+        meta:
+          dimension:
+            type: string
+            label: Magnitude Type
+      - name: etl_date
+        description: ETL Date
+        meta:
+          dimension:
+            type: timestamp
+            label: ETL Date

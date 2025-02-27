@@ -1,0 +1,12 @@
+services:
+  scheduler:
+    volumes:
+      - /project/seismotracker/astro/dbt:/usr/local/airflow/dbt:rw
+
+  webserver:
+    volumes:
+      - /project/seismotracker/astro/dbt:/usr/local/airflow/dbt:rw
+      
+  triggerer:
+    volumes:
+      - /project/seismotracker/astro/dbt:/usr/local/airflow/dbt:rw

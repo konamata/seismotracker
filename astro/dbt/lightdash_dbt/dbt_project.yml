@@ -1,0 +1,27 @@
+name: 'lightdash_dbt'
+version: '1.0.0'
+
+profile: 'lightdash_dbt'
+
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+models:
+  lightdash_dbt:
+    +materialized: view
+    +on_schema_change: "sync_all_columns"
+    marts:
+      +materialized: materialized_view
+      schema: marts
+    stg:
+      +materialized: incremental
+      incremental_strategy: merge
+      schema: stg
