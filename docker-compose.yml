@@ -14,7 +14,8 @@ services:
       com.centurylinklabs.watchtower.enable: false
 
   seismotracker-fetcher:
-    image: ghcr.io/konamata/seismotracker/fetcher:latest
+    image: ghcr.io/konamata/seismotracker/fetcher:arm64-latest # arm64
+    # image: ghcr.io/konamata/seismotracker/fetcher:latest # amd64
     build:
       context: ./seismotracker
       dockerfile: Dockerfile
