@@ -34,11 +34,11 @@ services:
 
   seismotracker-lightdash:
     image: ghcr.io/konamata/seismotracker/lightdash:arm64-latest
-    # image: lightdash/lightdash:latest # x86_64
+    # image: ghcr.io/konamata/seismotracker/lightdash:latest # x86_64
     build:
       context: ./lightdash
       dockerfile: dockerfile
-    pull_policy: build
+    pull_policy: always
     restart: always
     container_name: seismotracker-lightdash
     init: true
@@ -94,10 +94,12 @@ services:
       com.centurylinklabs.watchtower.enable: false
 
   seismotracker-postgres:
-    image: ghcr.io/konamata/seismotracker/postgres:latest
+    image: ghcr.io/konamata/seismotracker/postgres-gis:arm64-latest
+    # image: ghcr.io/konamata/seismotracker/postgres-gis:latest # x86_64
     build:
       context: ./postgres
       dockerfile: Dockerfile
+    pull_policy: always
     restart: always
     container_name: seismotracker-postgres
     ports:
