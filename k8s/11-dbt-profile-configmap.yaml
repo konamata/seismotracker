@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dbt-profile-configmap
+  namespace: default
+data:
+  profiles.yml: |
+    lightdash_dbt:
+      outputs:
+        dev:
+          dbname: seismotracker
+          schema: analytics
+          host: seismotracker-postgres.default.svc.cluster.local
+          pass: password
+          port: 5432
+          threads: 1
+          type: postgres
+          user: postgres
+          sslmode: disable

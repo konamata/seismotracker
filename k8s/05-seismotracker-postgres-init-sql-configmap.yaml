@@ -1,0 +1,127 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: seismotracker-postgres-init-sql
+  namespace: default
+data:
+  init.sql: |
+    CREATE EXTENSION postgis;
+    CREATE DATABASE lightdash;
+
+    CREATE TABLE events (
+        event_id  TEXT PRIMARY KEY,
+        otime     TIMESTAMP,
+        updated   TIMESTAMP,
+        mag       DOUBLE PRECISION,
+        mag_type  TEXT,
+        lat       DOUBLE PRECISION,
+        lon       DOUBLE PRECISION,
+        depth     DOUBLE PRECISION,
+        agency    TEXT,
+        status    TEXT,
+        estatus   TEXT,
+        emode     TEXT,
+        felt      BOOLEAN,
+        region    TEXT,
+        etldate   TIMESTAMP,
+        the_geom  geometry(Point, 4326) generated always as (ST_SetSRID(ST_MakePoint(lon, lat), 4326)) stored
+    );
+
+    CREATE INDEX idx_events_region_mag ON events(region, mag);
+    CREATE INDEX idx_events_date ON events(otime);
+    CREATE INDEX brin_events_date ON events USING brin(otime);
+
+    CREATE TABLE geoname (
+        geonameid       INT,
+        name            VARCHAR(200),
+        asciiname       VARCHAR(200),
+        alternatenames  TEXT,
+        latitude        FLOAT,
+        longitude       FLOAT,
+        fclass          CHAR(1),
+        fcode           VARCHAR(10),
+        country         VARCHAR(2),
+        cc2             TEXT,
+        admin1          VARCHAR(20),
+        admin2          VARCHAR(80),
+        admin3          VARCHAR(20),
+        admin4          VARCHAR(20),
+        population      BIGINT,
+        elevation       INT,
+        gtopo30         INT,
+        timezone        VARCHAR(40),
+        moddate         DATE
+    );
+
+    CREATE TABLE alternatename (
+        alternatenameId INT,
+        geonameid       INT,
+        isoLanguage     VARCHAR(7),
+        alternateName   VARCHAR(200),
+        isPreferredName BOOLEAN,
+        isShortName     BOOLEAN,
+        isColloquial    BOOLEAN,
+        isHistoric      BOOLEAN
+    );
+
+    CREATE TABLE countryinfo (
+        iso_alpha2      CHAR(2),
+        iso_alpha3      CHAR(3),
+        iso_numeric     INTEGER,
+        fips_code       VARCHAR(3),
+        name            VARCHAR(200),
+        capital         VARCHAR(200),
+        areainsqkm      DOUBLE PRECISION,
+        population      INTEGER,
+        continent       VARCHAR(2),
+        tld             VARCHAR(10),
+        currencycode    VARCHAR(3),
+        currencyname    VARCHAR(20),
+        phone           VARCHAR(20),
+        postalcode      VARCHAR(100),
+        postalcoderegex VARCHAR(200),
+        languages       VARCHAR(200),
+        geonameId       INT,
+        neighbors       VARCHAR(50),
+        equivfipscode   VARCHAR(3)
+    );
+
+    ALTER TABLE public.geoname SET (autovacuum_enabled = false);
+    ALTER TABLE public.alternatename SET (autovacuum_enabled = false);
+
+    COPY geoname (geonameid, name, asciiname, alternatenames, latitude, longitude, fclass, fcode, country, cc2, admin1, admin2, admin3, admin4, population, elevation, gtopo30, timezone, moddate)
+        FROM '/data/allCountries.txt' NULL AS '';
+
+    COPY alternatename (alternatenameid, geonameid, isolanguage, alternatename, ispreferredname, isshortname, iscolloquial, ishistoric)
+        FROM '/data/alternateNames.txt' NULL AS '';
+
+    COPY countryinfo (iso_alpha2, iso_alpha3, iso_numeric, fips_code, name, capital, areainsqkm, population, continent, tld, currencycode, currencyname, phone, postalcode, postalcoderegex, languages, geonameid, neighbors, equivfipscode)
+        FROM '/data/countryInfo.txt' NULL AS '';
+
+    ALTER TABLE ONLY alternatename
+        ADD CONSTRAINT pk_alternatenameid PRIMARY KEY (alternatenameid);
+
+    ALTER TABLE ONLY geoname
+        ADD CONSTRAINT pk_geonameid PRIMARY KEY (geonameid);
+
+    ALTER TABLE ONLY countryinfo
+        ADD CONSTRAINT pk_iso_alpha2 PRIMARY KEY (iso_alpha2);
+
+    ALTER TABLE ONLY countryinfo
+        ADD CONSTRAINT fk_geonameid FOREIGN KEY (geonameid) REFERENCES geoname(geonameid);
+
+    ALTER TABLE ONLY alternatename
+        ADD CONSTRAINT fk_geonameid FOREIGN KEY (geonameid) REFERENCES geoname(geonameid);
+
+    SELECT AddGeometryColumn ('public', 'geoname', 'the_geom', 4326, 'POINT', 2);
+
+    UPDATE geoname 
+        SET the_geom = ST_PointFromText('POINT(' || longitude || ' ' || latitude || ')', 4326);
+
+    CREATE INDEX idx_geoname_the_geom ON public.geoname USING gist(the_geom);
+
+    ALTER TABLE public.geoname SET (autovacuum_enabled = true);
+    ALTER TABLE public.alternatename SET (autovacuum_enabled = true);
+
+    CREATE TABLE init_complete (status BOOLEAN);
+    INSERT INTO init_complete (status) VALUES (TRUE);

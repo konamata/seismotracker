@@ -1,0 +1,114 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: seismotracker-lightdash
+  namespace: default
+  labels:
+    app: seismotracker-lightdash
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: seismotracker-lightdash
+  template:
+    metadata:
+      labels:
+        app: seismotracker-lightdash
+    spec:
+      containers:
+      - name: seismotracker-lightdash
+        image: ghcr.io/konamata/seismotracker/lightdash:arm64-latest
+        imagePullPolicy: Always
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "999Gi"
+            cpu: "10000m"
+        ports:
+        - containerPort: 8081
+        env:
+        - name: PGHOST
+          value: "seismotracker-postgres.default.svc.cluster.local"
+        - name: PGPORT
+          value: "5432"
+        - name: PGUSER
+          value: "postgres"
+        - name: PGPASSWORD
+          value: "password"
+        - name: PGDATABASE
+          value: "lightdash"
+        - name: POSTGRES_HOST_AUTH_METHOD
+          value: "trust"
+        - name: SECURE_COOKIES
+          value: "false"
+        - name: TRUST_PROXY
+          value: "false"
+        - name: LIGHTDASH_SECRET
+          value: "endoplazmikretikretikulum"
+        - name: PORT
+          value: "8081"
+        - name: LIGHTDASH_LOG_LEVEL
+          value: "debug"
+        - name: LIGHTDASH_INSTALL_TYPE
+          value: "docker_image"
+        - name: SITE_URL
+          value: "https://lightdash.home.il1.nl"
+        - name: LIGHTDASH_QUERY_MAX_LIMIT
+          value: "50000"
+        - name: ALLOW_MULTIPLE_ORGS
+          value: "false"
+        - name: LIGHTDASH_MAX_PAYLOAD
+          value: "50mb"
+        - name: HEADLESS_BROWSER_HOST
+          value: "headless-browser"
+        - name: HEADLESS_BROWSER_PORT
+          value: "3000"
+        - name: LIGHTDASH_INSTALL_ID
+          value: ""
+        - name: AUTH_DISABLE_PASSWORD_AUTHENTICATION
+          value: ""
+        - name: AUTH_ENABLE_GROUP_SYNC
+          value: ""
+        - name: AUTH_GOOGLE_ENABLED
+          value: ""
+        - name: AUTH_GOOGLE_OAUTH2_CLIENT_ID
+          value: ""
+        - name: AUTH_GOOGLE_OAUTH2_CLIENT_SECRET
+          value: ""
+        - name: EMAIL_SMTP_HOST
+          value: ""
+        - name: EMAIL_SMTP_PORT
+          value: ""
+        - name: EMAIL_SMTP_SECURE
+          value: ""
+        - name: EMAIL_SMTP_USER
+          value: ""
+        - name: EMAIL_SMTP_PASSWORD
+          value: ""
+        - name: EMAIL_SMTP_ALLOW_INVALID_CERT
+          value: ""
+        - name: EMAIL_SMTP_SENDER_NAME
+          value: ""
+        - name: EMAIL_SMTP_SENDER_EMAIL
+          value: ""
+        - name: RUDDERSTACK_WRITE_KEY
+          value: ""
+        - name: SCHEDULER_ENABLED
+          value: "true"
+        - name: GROUPS_ENABLED
+          value: "false"
+        - name: POSTHOG_PROJECT_API_KEY
+          value: ""
+        - name: POSTHOG_FE_API_HOST
+          value: ""
+        - name: POSTHOG_BE_API_HOST
+          value: ""
+        volumeMounts:
+        - name: lightdash-volume
+          mountPath: /usr/app/dbt
+      volumes:
+      - name: lightdash-volume
+        persistentVolumeClaim:
+          claimName: lightdash-pvc

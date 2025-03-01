@@ -1,0 +1,30 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: seismotracker-init
+  namespace: default
+spec:
+  template:
+    metadata:
+      labels:
+        app: seismotracker-init
+    spec:
+      containers:
+      - name: seismotracker-init
+        image: ghcr.io/konamata/seismotracker/init:arm64-latest
+        imagePullPolicy: Always
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+          requests:
+            memory: "64Mi"
+            cpu: "250m"
+        volumeMounts:
+        - name: geonames-volume
+          mountPath: /data
+      restartPolicy: Never
+      volumes:
+      - name: geonames-volume
+        persistentVolumeClaim:
+          claimName: geonames-pvc

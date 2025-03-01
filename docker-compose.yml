@@ -7,10 +7,11 @@ services:
       dockerfile: Dockerfile
     pull_policy: build
     container_name: seismotracker-init
-    network_mode: none
     volumes:
       - /project/seismotracker/data/geonames:/data:rw
     restart: no
+    networks:
+      - seismotracker-network
     labels:
       com.centurylinklabs.watchtower.enable: false
 

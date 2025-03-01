@@ -1,0 +1,60 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: dbt-runner
+  namespace: default
+spec:
+  schedule: "*/5 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+          initContainers:
+          - name: git-clone
+            image: alpine/git  # Küçük ve hızlı bir Git imajı
+            command: ["/bin/sh", "-c"]
+            args:
+              - "git clone --depth=1 https://${GIT_USERNAME}:${GIT_TOKEN}@github.com/konamata/home-k8s.git /dbt &&
+                 ls -lha /dbt/"
+            env:
+            - name: GIT_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: ghcr-secret
+                  key: GIT_USERNAME
+            - name: GIT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: ghcr-secret
+                  key: GIT_TOKEN
+            volumeMounts:
+            - name: dbt-pvc
+              mountPath: /dbt
+
+          containers:
+          - name: dbt-run
+            image: ghcr.io/dbt-labs/dbt-postgres:1.9.latest
+            imagePullPolicy: Always
+            command: ["/bin/sh", "-c"]
+            args:
+              - "dbt run"
+            env:
+            - name: DBT_PROFILES_DIR
+              value: "/root/.dbt"
+            volumeMounts:
+            - name: dbt-pvc
+              mountPath: /dbt
+            - name: dbt-profile
+              mountPath: /root/.dbt
+
+          imagePullSecrets:
+          - name: ghcr-secret  # GHCR'den image çekmek için
+
+          volumes:
+          - name: dbt-pvc
+            persistentVolumeClaim:
+              claimName: dbt-pvc
+          - name: dbt-profile
+            configMap:
+              name: dbt-profile-configmap

@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: seismotracker-postgres
+  namespace: default
+  labels:
+    app: seismotracker-postgres
+spec:
+  serviceName: "seismotracker-postgres"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: seismotracker-postgres
+  template:
+    metadata:
+      labels:
+        app: seismotracker-postgres
+    spec:
+      containers:
+        - name: seismotracker-postgres
+          image: ghcr.io/konamata/seismotracker/postgres-gis:arm64-latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              value: "postgres"
+            - name: POSTGRES_PASSWORD
+              value: "password"
+            - name: POSTGRES_DB
+              value: "seismotracker"
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+            - name: init-sql
+              mountPath: /docker-entrypoint-initdb.d
+            - name: geonames-volume
+              mountPath: /data
+      volumes:
+        - name: init-sql
+          configMap:
+            name: seismotracker-postgres-init-sql
+            items:
+              - key: init.sql
+                path: init.sql
+        - name: geonames-volume
+          persistentVolumeClaim:
+            claimName: geonames-pvc
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 25Gi

@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: seismotracker-fetcher
+  namespace: default
+  labels:
+    app: seismotracker-fetcher
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: seismotracker-fetcher
+  template:
+    metadata:
+      labels:
+        app: seismotracker-fetcher
+    spec:
+      containers:
+      - name: seismotracker-fetcher
+        image: ghcr.io/konamata/seismotracker/fetcher:arm64-latest
+        imagePullPolicy: Always
+        env:
+        - name: POSTGRES_URI
+          value: "postgres://postgres:password@seismotracker-postgres.default.svc.cluster.local:5432/seismotracker?sslmode=disable"
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+          requests:
+            memory: "64Mi"
+            cpu: "250m"
