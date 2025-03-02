@@ -1,0 +1,12 @@
+lightdash_dbt:
+  outputs:
+    dev:
+      dbname: seismotracker
+      schema: analytics
+      host: seismotracker-postgres
+      pass: password
+      port: 5432
+      threads: 1
+      type: postgres
+      user: postgres
+      sslmode: disable

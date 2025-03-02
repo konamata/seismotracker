@@ -105,8 +105,8 @@ services:
     pull_policy: always
     restart: always
     container_name: seismotracker-postgres
-    ports:
-      - 5432:5432
+    # ports:
+      # - 5432:5432
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
@@ -138,6 +138,30 @@ services:
       - seismotracker-network
     labels:
       com.centurylinklabs.watchtower.enable: true
+
+  seismotracker-dbt:
+    image: ghcr.io/dbt-labs/dbt-postgres:1.9.latest
+    build:
+      context: ./dbt
+      dockerfile: Dockerfile
+    pull_policy: build
+    restart: always
+    container_name: seismotracker-dbt
+    init: true
+    depends_on:
+      - seismotracker-postgres
+    environment:
+      - DBT_PROFILES_DIR=/root/.dbt
+    command: ["run"]
+    volumes:
+      - /project/seismotracker/astro/dbt/lightdash_dbt:/usr/app/dbt
+      - /project/seismotracker/astro/dbt/profiles.yml:/root/.dbt/profiles.yml
+    networks:
+      - seismotracker-network
+    labels:
+      com.centurylinklabs.watchtower.enable: true
+
+
 
 networks:
   seismotracker-network:
