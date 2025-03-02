@@ -5,13 +5,13 @@ FROM python:$py_version-slim-bullseye as base
 RUN apt-get update \
   && apt-get dist-upgrade -y \
   && apt-get install -y --no-install-recommends \
-    build-essential=12.9 \
-    ca-certificates=20210119 \
-    git=1:2.30.2-1+deb11u2 \
-    libpq-dev=13.18-0+deb11u1 \
-    make=4.3-4.1 \
-    openssh-client=1:8.4p1-5+deb11u3 \
-    software-properties-common=0.96.20.2-2.1 \
+    build-essential \
+    ca-certificates \
+    git \
+    libpq-dev \
+    make \
+    openssh-client \
+    software-properties-common \
   && apt-get clean \
   && rm -rf \
     /var/lib/apt/lists/* \
@@ -38,15 +38,12 @@ RUN python -m pip install --no-cache-dir "dbt-core @ git+https://github.com/dbt-
 
 FROM base as dbt-postgres
 
-ARG commit_ref=main
-
 HEALTHCHECK CMD dbt --version || exit 1
 
 WORKDIR /usr/app/dbt/
 ENTRYPOINT ["dbt"]
 
-RUN python -m pip install --no-cache-dir "dbt-postgres @ git+https://github.com/dbt-labs/dbt-core@${commit_ref}#subdirectory=plugins/postgres"
-
+RUN python -m pip install --no-cache-dir dbt-postgres
 
 FROM dbt-core as dbt-third-party
 

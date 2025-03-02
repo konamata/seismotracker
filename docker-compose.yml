@@ -140,10 +140,12 @@ services:
       com.centurylinklabs.watchtower.enable: true
 
   seismotracker-dbt:
-    image: ghcr.io/dbt-labs/dbt-postgres:1.9.latest
+    image: ghcr.io/konamata/seismotracker/dbt:arm64-latest # arm64
+    # image: ghcr.io/konamata/seismotracker/dbt:latest # amd64
     build:
       context: ./dbt
       dockerfile: Dockerfile
+      target: dbt-postgres
     pull_policy: build
     restart: always
     container_name: seismotracker-dbt
@@ -152,10 +154,12 @@ services:
       - seismotracker-postgres
     environment:
       - DBT_PROFILES_DIR=/root/.dbt
-    command: ["run"]
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - while true; do echo "Running dbt run..."; dbt run; echo "Sleeping for 30 seconds..."; sleep 30; done
     volumes:
-      - /project/seismotracker/astro/dbt/lightdash_dbt:/usr/app/dbt
-      - /project/seismotracker/astro/dbt/profiles.yml:/root/.dbt/profiles.yml
+      - /project/seismotracker/lightdash_dbt:/usr/app/dbt
+      - /project/seismotracker/dbt/profiles.yml:/root/.dbt/profiles.yml
     networks:
       - seismotracker-network
     labels:

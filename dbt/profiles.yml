@@ -1,6 +1,6 @@
 lightdash_dbt:
   outputs:
-    dev:
+    default:
       dbname: seismotracker
       schema: analytics
       host: seismotracker-postgres
