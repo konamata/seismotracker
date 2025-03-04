@@ -68,6 +68,6 @@ jobs:
           platforms: ${{ env.PLATFORMS }}
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/${{ github.repository }}/${{ matrix.services.name }}:${{ steps.unique_tag.outputs.unique_tag }}
-            ghcr.io/${{ github.repository_owner }}/${{ github.repository }}/${{ matrix.services.name }}:latest
+            ghcr.io/${{ github.repository }}/${{ matrix.services.name }}:${{ steps.unique_tag.outputs.unique_tag }}
+            ghcr.io/${{ github.repository }}/${{ matrix.services.name }}:latest
           no-cache: true
