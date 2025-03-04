@@ -31,7 +31,10 @@ jobs:
           - name: postgres-gis
             folder: postgres
             dockerfile: Dockerfile
-      max-parallel: 4
+          - name: dbt
+            folder: dbt
+            dockerfile: Dockerfile
+      max-parallel: 5
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
