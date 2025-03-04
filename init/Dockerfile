@@ -1,4 +1,10 @@
 FROM alpine:latest
+
+ARG TARGETPLATFORM
+ARG BUILDPLATFORM
+ARG TARGETOS
+ARG TARGETARCH
+
 RUN apk --no-cache add ca-certificates wget unzip bash
 WORKDIR /data/
 

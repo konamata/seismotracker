@@ -1,6 +1,6 @@
 ARG py_version=3.11.2
 
-FROM --platform=$BUILDPLATFORM python:$py_version-slim-bullseye as base
+FROM python:$py_version-slim-bullseye as base
 
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
