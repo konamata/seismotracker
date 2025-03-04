@@ -1,7 +1,6 @@
 services:
   seismotracker-init:
-    image: ghcr.io/konamata/seismotracker/init:arm64-latest # arm64
-    # image: ghcr.io/konamata/seismotracker/init:latest # amd64
+    image: ghcr.io/konamata/seismotracker/init:latest
     build:
       context: ./init
       dockerfile: Dockerfile
@@ -115,8 +114,7 @@ services:
       com.centurylinklabs.watchtower.enable: false
 
   seismotracker-postgres:
-    image: ghcr.io/konamata/seismotracker/postgres-gis:arm64-latest # arm64
-    # image: ghcr.io/konamata/seismotracker/postgres-gis:latest # amd64
+    image: ghcr.io/konamata/seismotracker/postgres-gis:latest
     build:
       context: ./postgres
       dockerfile: Dockerfile
@@ -158,8 +156,7 @@ services:
       com.centurylinklabs.watchtower.enable: true
 
   seismotracker-dbt:
-    image: ghcr.io/konamata/seismotracker/dbt:arm64-latest # arm64
-    # image: ghcr.io/konamata/seismotracker/dbt:latest # amd64
+    image: ghcr.io/konamata/seismotracker/dbt:latest
     build:
       context: ./dbt
       dockerfile: Dockerfile
