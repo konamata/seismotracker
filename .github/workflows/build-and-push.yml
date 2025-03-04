@@ -19,9 +19,17 @@ jobs:
     strategy:
       matrix:
         services:
+          - name: seismo-init
+            folder: init
+            dockerfile: Dockerfile
           - name: seismo-fetcher
+            folder: seismo-fetcher
             dockerfile: Dockerfile
           - name: seismo-api
+            folder: seismo-api
+            dockerfile: Dockerfile
+          - name: postgres-gis
+            folder: postgres
             dockerfile: Dockerfile
       max-parallel: 2
     steps:
@@ -53,7 +61,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ${{ matrix.services.name }}
-          file: ${{ matrix.services.name }}/${{ matrix.services.dockerfile }}
+          file: ${{ matrix.services.folder }}/${{ matrix.services.dockerfile }}
           platforms: ${{ env.PLATFORMS }}
           push: true
           tags: |

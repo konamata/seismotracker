@@ -11,7 +11,7 @@ RUN go mod download
 COPY . .
 RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -ldflags="-w -s" -o seismo-api main.go
 
-FROM --platform=${TARGETPLATFORM:-linux/arm64} scratch
+FROM scratch
 WORKDIR /app/
 COPY --from=builder /app/seismo-api /app/seismo-api
 EXPOSE 8080
