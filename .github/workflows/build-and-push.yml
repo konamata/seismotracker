@@ -31,10 +31,6 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Update lightdash submodule
-        run: |
-          git submodule update --remote --merge lightdash
-
       - name: Set up QEMU and Docker Buildx
         uses: docker/setup-buildx-action@v3
         with:
