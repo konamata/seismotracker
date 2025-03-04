@@ -17,11 +17,11 @@ jobs:
       matrix:
         services:
           - name: lightdash
-            dockerfile: dockerfile
+            dockerfile: Dockerfile
             platform: linux/arm64
             architecture: arm64
           - name: lightdash
-            dockerfile: dockerfile
+            dockerfile: Dockerfile
             platform: linux/amd64
             architecture: amd64
     steps:
