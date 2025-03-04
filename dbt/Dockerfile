@@ -1,5 +1,5 @@
 ARG py_version=3.11.2
-FROM --platform=$BUILDPLATFORM python:$py_version-slim-bullseye as base
+FROM --platform=$BUILDPLATFORM python:$py_version-slim-bullseye AS base
 
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
@@ -32,7 +32,7 @@ RUN python -m pip install --upgrade "pip==24.0" "setuptools==69.2.0" "wheel==0.4
 # =============================
 # dbt-core Image
 # =============================
-FROM base as dbt-core
+FROM base AS dbt-core
 
 ARG commit_ref=main
 HEALTHCHECK CMD dbt --version || exit 1
@@ -45,7 +45,7 @@ RUN python -m pip install --no-cache-dir "dbt-core @ git+https://github.com/dbt-
 # =============================
 # dbt-postgres Image
 # =============================
-FROM base as dbt-postgres
+FROM base AS dbt-postgres
 
 HEALTHCHECK CMD dbt --version || exit 1
 
@@ -57,7 +57,7 @@ RUN python -m pip install --no-cache-dir dbt-postgres
 # =============================
 # dbt-third-party Adapter
 # =============================
-FROM dbt-core as dbt-third-party
+FROM dbt-core AS dbt-third-party
 
 ARG dbt_third_party
 
