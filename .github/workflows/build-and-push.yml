@@ -14,7 +14,7 @@ env:
 
 jobs:
   build-and-push:
-    runs-on: ubuntu-latest
+    runs-on: zima
     if: contains(github.event.head_commit.message, '#BUILD')
     strategy:
       matrix:
@@ -33,6 +33,9 @@ jobs:
             dockerfile: Dockerfile
           - name: dbt
             folder: dbt
+            dockerfile: Dockerfile
+          - name: lightdash
+            folder: lightdash
             dockerfile: Dockerfile
       max-parallel: 5
     steps:
