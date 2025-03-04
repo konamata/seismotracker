@@ -75,3 +75,4 @@ jobs:
             ghcr.io/${{ github.repository }}/${{ matrix.services.name }}:${{ steps.unique_tag.outputs.unique_tag }}
             ghcr.io/${{ github.repository }}/${{ matrix.services.name }}:latest
           no-cache: true
+          provenance: false
