@@ -3,6 +3,11 @@
 # -----------------------------
     ARG NODE_VERSION=20
     FROM --platform=$BUILDPLATFORM node:${NODE_VERSION}-bookworm-slim AS base
+
+    ARG TARGETPLATFORM
+    ARG BUILDPLATFORM
+    ARG TARGETOS
+    ARG TARGETARCH
     
     ENV PNPM_HOME="/pnpm"
     ENV PATH="$PNPM_HOME:$PATH"
@@ -43,7 +48,7 @@
     # -----------------------------
     # Stage 1: Dev Environment
     # -----------------------------
-    FROM --platform=$TARGETPLATFORM base AS dev
+    FROM base AS dev
     
     RUN apt-get update && apt-get install -y --no-install-recommends \
         postgresql-client \
@@ -102,7 +107,7 @@
     # -----------------------------
     # Stage 3: Execution Environment
     # -----------------------------
-    FROM --platform=$TARGETPLATFORM node:${NODE_VERSION}-bookworm-slim AS prod
+    FROM node:${NODE_VERSION}-bookworm-slim AS prod
     
     ENV NODE_ENV production
     ENV PATH="$PNPM_HOME:$PATH"
