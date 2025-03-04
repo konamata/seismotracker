@@ -64,7 +64,7 @@ jobs:
           password: ${{ secrets.MY_PAT_TOKEN }}
 
       - name: Create Multi-Arch Image Manifest
-        uses: Noelware/docker-manifest-action@@v0.3.0
+        uses: Noelware/docker-manifest-action@v0.3.0
         with:
           inputs: ghcr.io/${{ github.repository }}/lightdash:latest
           images: ghcr.io/${{ github.repository }}/lightdash:arm64,ghcr.io/${{ github.repository }}/lightdash:amd64
