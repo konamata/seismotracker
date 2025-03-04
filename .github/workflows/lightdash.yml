@@ -1,0 +1,72 @@
+name: Lightdash CI/CD
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-24.04
+    if: contains(github.event.head_commit.message, '#LIGHTDASH')
+    strategy:
+      matrix:
+        services:
+          - name: lightdash
+            dockerfile: dockerfile
+            platform: linux/arm64
+          - name: lightdash
+            dockerfile: dockerfile
+            platform: linux/amd64
+      max-parallel: 5
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up QEMU and Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          platforms: ${{ matrix.services.platform }}
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.MY_PAT_TOKEN }}
+
+      - name: Build and Push Multi-Arch Image (No Cache)
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.services.folder }}
+          file: ${{ matrix.services.folder }}/${{ matrix.services.dockerfile }}
+          platforms: ${{ matrix.services.platform }}
+          push: true
+          tags: ghcr.io/${{ github.repository }}/${{ matrix.services.name }}:${{ matrix.services.platform }}
+          no-cache: true
+          provenance: false
+
+  create-manifest:
+    runs-on: ubuntu-24.04
+    needs: build-and-push
+    if: always()
+    steps:
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.MY_PAT_TOKEN }}
+
+      - name: Create Multi-Arch Image Manifest
+        uses: Noelware/docker-manifest-action@@v0.3.0
+        with:
+          inputs: ghcr.io/${{ github.repository }}/lightdash:latest
+          images: ghcr.io/${{ github.repository }}/lightdash:arm64,ghcr.io/${{ github.repository }}/lightdash:amd64
+          push: true
