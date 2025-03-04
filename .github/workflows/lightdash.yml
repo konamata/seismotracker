@@ -45,8 +45,8 @@ jobs:
       - name: Build and Push Multi-Arch Image (No Cache)
         uses: docker/build-push-action@v6
         with:
-          context: ${{ matrix.services.folder }}
-          file: ${{ matrix.services.folder }}/${{ matrix.services.dockerfile }}
+          context: ${{ matrix.services.name }}
+          file: ${{ matrix.services.name }}/${{ matrix.services.dockerfile }}
           platforms: ${{ matrix.services.platform }}
           push: true
           tags: ghcr.io/${{ github.repository }}/${{ matrix.services.name }}:${{ matrix.services.architecture }}
