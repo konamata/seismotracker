@@ -14,13 +14,25 @@ env:
 
 jobs:
   build-and-push:
-    runs-on: ubuntu-latest
+    runs-on: zima
     if: contains(github.event.head_commit.message, '#BUILD')
     strategy:
       matrix:
         services:
-          - name: lightdash
-            folder: lightdash
+          - name: seismo-init
+            folder: init
+            dockerfile: Dockerfile
+          - name: seismo-fetcher
+            folder: seismo-fetcher
+            dockerfile: Dockerfile
+          - name: seismo-api
+            folder: seismo-api
+            dockerfile: Dockerfile
+          - name: postgres-gis
+            folder: postgres
+            dockerfile: Dockerfile
+          - name: dbt
+            folder: dbt
             dockerfile: Dockerfile
       max-parallel: 5
     steps:
