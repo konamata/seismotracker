@@ -19,6 +19,21 @@ jobs:
     strategy:
       matrix:
         services:
+          - name: seismo-init
+            folder: init
+            dockerfile: Dockerfile
+          - name: seismo-fetcher
+            folder: seismo-fetcher
+            dockerfile: Dockerfile
+          - name: seismo-api
+            folder: seismo-api
+            dockerfile: Dockerfile
+          - name: postgres-gis
+            folder: postgres
+            dockerfile: Dockerfile
+          - name: dbt
+            folder: dbt
+            dockerfile: Dockerfile
           - name: lightdash
             folder: lightdash
             dockerfile: Dockerfile
@@ -28,6 +43,10 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
+
+      - name: Copy Dockerfile to Submodule
+        run: |
+          cp -v lightdash_docker/Dockerfile lightdash/Dockerfile
 
       - name: Set up QEMU and Docker Buildx
         uses: docker/setup-buildx-action@v3
