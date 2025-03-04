@@ -13,6 +13,7 @@ RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -ldflags="-w -s
 
 FROM scratch
 WORKDIR /app/
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=builder /app/seismo-api /app/seismo-api
 EXPOSE 8080
 CMD ["./seismo-api"]
