@@ -20,9 +20,9 @@ jobs:
     strategy:
       matrix:
         services:
-          - name: seismotracker
+          - name: seismo-fetcher
             dockerfile: Dockerfile
-          - name: lightdash
+          - name: seismo-api
             dockerfile: Dockerfile
       max-parallel: 2
     steps:
