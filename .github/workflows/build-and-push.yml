@@ -31,7 +31,7 @@ jobs:
           - name: postgres-gis
             folder: postgres
             dockerfile: Dockerfile
-      max-parallel: 2
+      max-parallel: 4
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -60,7 +60,7 @@ jobs:
       - name: Build and Push Multi-Arch Image (No Cache)
         uses: docker/build-push-action@v6
         with:
-          context: ${{ matrix.services.name }}
+          context: ${{ matrix.services.folder }}
           file: ${{ matrix.services.folder }}/${{ matrix.services.dockerfile }}
           platforms: ${{ env.PLATFORMS }}
           push: true
