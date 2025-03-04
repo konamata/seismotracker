@@ -14,26 +14,11 @@ env:
 
 jobs:
   build-and-push:
-    runs-on: zima
+    runs-on: ubuntu-latest
     if: contains(github.event.head_commit.message, '#BUILD')
     strategy:
       matrix:
         services:
-          - name: seismo-init
-            folder: init
-            dockerfile: Dockerfile
-          - name: seismo-fetcher
-            folder: seismo-fetcher
-            dockerfile: Dockerfile
-          - name: seismo-api
-            folder: seismo-api
-            dockerfile: Dockerfile
-          - name: postgres-gis
-            folder: postgres
-            dockerfile: Dockerfile
-          - name: dbt
-            folder: dbt
-            dockerfile: Dockerfile
           - name: lightdash
             folder: lightdash
             dockerfile: Dockerfile
