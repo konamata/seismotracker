@@ -19,9 +19,11 @@ jobs:
           - name: lightdash
             dockerfile: dockerfile
             platform: linux/arm64
+            architecture: arm64
           - name: lightdash
             dockerfile: dockerfile
             platform: linux/amd64
+            architecture: amd64
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -47,7 +49,7 @@ jobs:
           file: ${{ matrix.services.folder }}/${{ matrix.services.dockerfile }}
           platforms: ${{ matrix.services.platform }}
           push: true
-          tags: ghcr.io/${{ github.repository }}/${{ matrix.services.name }}:${{ matrix.services.platform }}
+          tags: ghcr.io/${{ github.repository }}/${{ matrix.services.name }}:${{ matrix.services.architecture }}
           no-cache: true
           provenance: false
 
