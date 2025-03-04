@@ -60,6 +60,11 @@
     # Stage 2: Build for Production
     # -----------------------------
     FROM --platform=$BUILDPLATFORM base AS prod-builder
+
+    ARG TARGETPLATFORM
+    ARG BUILDPLATFORM
+    ARG TARGETOS
+    ARG TARGETARCH
     
     # Install dependencies for build process
     COPY package.json .
