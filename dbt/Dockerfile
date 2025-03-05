@@ -51,7 +51,7 @@ HEALTHCHECK CMD dbt --version || exit 1
 
 WORKDIR /usr/app/dbt/
 
-COPY ./lightdash_dbt/. /dbt/
+COPY ./lightdash_dbt/. /usr/app/dbt/
 
 ENTRYPOINT ["dbt"]
 
