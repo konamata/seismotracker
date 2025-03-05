@@ -13,7 +13,7 @@ env:
   PLATFORMS: linux/amd64,linux/arm64
 
 jobs:
-  build-and-push-seismotracker:
+  build-seismotracker:
     runs-on: ubuntu-24.04
     if: contains(github.event.head_commit.message, '#BUILD')
     strategy:
@@ -75,7 +75,7 @@ jobs:
           provenance: false
           target: ${{ matrix.services.target || '' }}
 
-  build-and-push-lightdash-arm64:
+  build-lightdash-arm64:
     runs-on: ubuntu-22.04-arm
     if: contains(github.event.head_commit.message, '#LIGHTDASH')
     steps:
@@ -107,7 +107,7 @@ jobs:
           no-cache: true
           provenance: false
 
-  build-and-push-lightdash-amd64:
+  build-lightdash-amd64:
     runs-on: ubuntu-24.04
     if: contains(github.event.head_commit.message, '#LIGHTDASH')
     steps:
@@ -141,7 +141,7 @@ jobs:
 
   create-lightdash-manifest:
     runs-on: ubuntu-24.04
-    needs: [build-and-push-lightdash-arm64, build-and-push-lightdash-amd64]
+    needs: [build-lightdash-arm64, build-lightdash-amd64]
     steps:
       - name: Log in to GHCR
         uses: docker/login-action@v3
