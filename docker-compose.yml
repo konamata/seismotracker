@@ -140,20 +140,6 @@ services:
     labels:
       com.centurylinklabs.watchtower.enable: true
 
-  seismotracker-headless-browser:
-    image: ghcr.io/browserless/chromium:v2.24.3
-    restart: always
-    container_name: seismotracker-headless-browser
-    init: true
-    depends_on:
-      - seismotracker-lightdash
-    ports:
-      - 3001:3000
-    networks:
-      - seismotracker-network
-    labels:
-      com.centurylinklabs.watchtower.enable: true
-
   seismotracker-dbt:
     image: ghcr.io/konamata/seismotracker/dbt:latest
     build:
@@ -178,8 +164,6 @@ services:
       - seismotracker-network
     labels:
       com.centurylinklabs.watchtower.enable: true
-
-
 
 networks:
   seismotracker-network:

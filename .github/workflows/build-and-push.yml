@@ -1,4 +1,4 @@
-name: Build and Push Multi-Arch Docker Images
+name: Build and Push Multi-Arch Docker Images (Seismotracker & Lightdash)
 
 on:
   push:
@@ -13,7 +13,7 @@ env:
   PLATFORMS: linux/amd64,linux/arm64
 
 jobs:
-  build-and-push:
+  build-and-push-seismotracker:
     runs-on: ubuntu-24.04
     if: contains(github.event.head_commit.message, '#BUILD')
     strategy:
@@ -74,3 +74,85 @@ jobs:
           no-cache: true
           provenance: false
           target: ${{ matrix.services.target || '' }}
+
+  build-and-push-lightdash-arm64:
+    runs-on: ubuntu-22.04-arm
+    if: contains(github.event.head_commit.message, '#LIGHTDASH')
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up QEMU and Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          platforms: linux/arm64
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.MY_PAT_TOKEN }}
+
+      - name: Build and Push Lightdash ARM64 Image (No Cache)
+        uses: docker/build-push-action@v6
+        with:
+          context: lightdash
+          file: lightdash/Dockerfile
+          platforms: linux/arm64
+          push: true
+          tags: ghcr.io/${{ github.repository }}/lightdash:arm64
+          no-cache: true
+          provenance: false
+
+  build-and-push-lightdash-amd64:
+    runs-on: ubuntu-24.04
+    if: contains(github.event.head_commit.message, '#LIGHTDASH')
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up QEMU and Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          platforms: linux/amd64
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.MY_PAT_TOKEN }}
+
+      - name: Build and Push Lightdash AMD64 Image (No Cache)
+        uses: docker/build-push-action@v6
+        with:
+          context: lightdash
+          file: lightdash/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: ghcr.io/${{ github.repository }}/lightdash:amd64
+          no-cache: true
+          provenance: false
+
+  create-lightdash-manifest:
+    runs-on: ubuntu-24.04
+    needs: [build-and-push-lightdash-arm64, build-and-push-lightdash-amd64]
+    steps:
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.MY_PAT_TOKEN }}
+
+      - name: Create Lightdash Multi-Arch Image Manifest
+        run: |
+          docker manifest create ghcr.io/${{ github.repository }}/lightdash:latest \
+            ghcr.io/${{ github.repository }}/lightdash:arm64 \
+            ghcr.io/${{ github.repository }}/lightdash:amd64
+          docker manifest push ghcr.io/${{ github.repository }}/lightdash:latest
