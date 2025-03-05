@@ -1,4 +1,4 @@
-name: 'lightdash_dbt'
+name: 'seismotracker'
 version: '1.0.0'
 
 profile: 'lightdash_dbt'

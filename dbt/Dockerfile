@@ -50,6 +50,9 @@ FROM base AS dbt-postgres
 HEALTHCHECK CMD dbt --version || exit 1
 
 WORKDIR /usr/app/dbt/
+
+COPY ./lightdash_dbt/. /dbt/
+
 ENTRYPOINT ["dbt"]
 
 RUN python -m pip install --no-cache-dir dbt-postgres
