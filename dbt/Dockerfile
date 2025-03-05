@@ -51,13 +51,14 @@ HEALTHCHECK CMD dbt --version || exit 1
 
 WORKDIR /usr/app/dbt/
 
+
+RUN python -m pip install --no-cache-dir dbt-postgres
+
 COPY ./lightdash_dbt/. /usr/app/dbt/
 
 RUN dbt deps
 
 ENTRYPOINT ["dbt"]
-
-RUN python -m pip install --no-cache-dir dbt-postgres
 
 # =============================
 # dbt-third-party Adapter
