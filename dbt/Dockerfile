@@ -53,6 +53,8 @@ WORKDIR /usr/app/dbt/
 
 COPY ./lightdash_dbt/. /usr/app/dbt/
 
+RUN dbt deps
+
 ENTRYPOINT ["dbt"]
 
 RUN python -m pip install --no-cache-dir dbt-postgres
