@@ -13,7 +13,7 @@ env:
   PLATFORMS: linux/amd64,linux/arm64
 
 jobs:
-  build-seismotracker:
+  build-seismo:
     runs-on: ubuntu-24.04
     if: contains(github.event.head_commit.message, '#BUILD')
     strategy:
