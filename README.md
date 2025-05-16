@@ -35,7 +35,7 @@ SeismoTracker is a Docker-based multi-service application designed to track and 
 1. **Clone the Repository**
 
    ```bash
-   git clone https://github.com/your_username/seismotracker.git
+   git clone https://github.com/konamata/seismotracker.git
    cd seismotracker
    ```
 
